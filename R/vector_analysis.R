@@ -12,7 +12,7 @@ vector_analysis <- function(vec)
 vector_analysis.numeric <- function(vec)
 {
   #Dependants: moments
-  #Parameters: Outlier_method = c("IRQ", "MZsc")
+  #Parameters: Outlier_method = c("IQR", "Mod_Zscore")
   #For numeric variables
 
   #First we check if it's not a factor variable with weird encoding
@@ -33,24 +33,25 @@ vector_analysis.numeric <- function(vec)
   vec_quant = quantile(vec_nm)
 
   #Outliers
-  vec_out = c()
+  vec_out_z = c()
+  vec_out_iqr = c()
 
-  if("MZsc" == "MZsc" & mad(vec_nm) != 0)
+  if(mad(vec_nm) != 0)
   {
     #Modified Z-score method
     vec_mad = mad(vec_nm)
-    for(i in vec_nm) {if((0.6745*(i - vec_med)/vec_mad) > 3.5) {vec_out = c(vec_out, i)}}
-  } else
-  {
-    #IQR method - if mad = 0
-    vec_iqr = IQR(vec_nm)
-    vec_bounds = c(vec_quant[2] - 1.5 * vec_iqr, vec_quant[4] + 1.5 * vec_iqr)
-    for(i in vec_nm) {if(i < vec_bounds[1] | i > vec_bounds[2]) {vec_out = c(vec_out, i)}}
+    for(i in vec_nm) {if((0.6745*(i - vec_med)/vec_mad) > 3.5) {vec_out_z = c(vec_out_z, i)}}
   }
 
+  #IQR method
+  vec_iqr = IQR(vec_nm)
+  vec_bounds = c(vec_quant[2] - 1.5 * vec_iqr, vec_quant[4] + 1.5 * vec_iqr)
+  for(i in vec_nm) {if(i < vec_bounds[1] | i > vec_bounds[2]) {vec_out_iqr = c(vec_out_iqr, i)}}
+
+
   #Advanced (kurtosis, skewness)
-  vec_kurt = kurtosis(vec_nm)
-  vec_skew = skewness(vec_nm)
+  vec_kurt = moments::kurtosis(vec_nm)
+  vec_skew = moments::skewness(vec_nm)
 
 
   #Distributions (only for n>100)
@@ -72,8 +73,10 @@ vector_analysis.numeric <- function(vec)
 
   distributions = list(normal = vec_norm)
 
+  outliers = list(IQR = vec_out_iqr, Mod_Zscore = vec_out_z)
+
   result = list(type = "numeric", raw = vec, basic = basic, advanced = advanced,
-                distributions = distributions, quantiles = vec_quant, outliers = vec_out)
+                distributions = distributions, quantiles = vec_quant, outliers = outliers)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
@@ -119,7 +122,7 @@ vector_analysis.factor <- function(vec)
 vector_analysis.character <- function(vec)
 {
   #We need to check if it's a factor variable, a date or just plain text
-  #We check if >80% of non-missing data is formated as date
+  #We check if >50% of non-missing data is formated as date
   vec_n = length(vec)
   vec_miss = sum(is.na(vec))
   vec_miss_p = vec_miss/vec_n*100
@@ -130,7 +133,7 @@ vector_analysis.character <- function(vec)
   {
     vec_dates = sapply(vec_nm, DateFormat)
 
-    if(length(na.omit(vec_dates))/(vec_n-vec_miss) >= 0.8) {return(vector_analysis.dates(vec))}
+    if(length(na.omit(vec_dates))/(vec_n-vec_miss) > 0.5) {return(vector_analysis.dates(vec))}
   }
 
   #It might be a factor then (since it's not numeric we can consider max 10% levels)

@@ -15,6 +15,7 @@ analyze_df_internal <- function(df)
 #' @export
 analyze_df_index <- function(df, index.limit = 3)
 {
+  #Dependants: dplyr
   #TO DO: ADD DATES
   #First function to call in analyze_df if indexes are not specified
   #We consider only integer/character/factor variables w/e missings and negative values
@@ -67,8 +68,8 @@ analyze_df_index <- function(df, index.limit = 3)
     candidates_i = t(combn(candidates, i))
 
     ind_i = apply(candidates_i, 1,
-                  function(cmb) {if(nrow(distinct(df[,cmb])) == df_n)
-                  {cmb} else {NA}})
+                  function(cmb) {if(nrow(dplyr::distinct(df[,cmb])) == df_n)
+                                 {cmb} else {NA}})
 
     ind_name = paste0("index_", i)
 
