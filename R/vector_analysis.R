@@ -54,15 +54,9 @@ vector_analysis.numeric <- function(vec)
   vec_skew = moments::skewness(vec_nm)
 
 
-  #Distributions (only for n>100)
+  #Distributions
   #Normal
-  if(vec_n >= 100)
-  {
-    vec_jb = (((vec_n-1)/6) * (vec_skew^2 + (0.25*(vec_kurt-3)^2)))
-    vec_jb_pval = 2 * dchisq(vec_jb, 2)
-
-    vec_norm = list(method = "Jarque-Bera Test", statistic = vec_jb, p_value = vec_jb_pval)
-  } else {vec_norm = "Not available for variables shorter than 100"}
+  vec_norm = isNormalDist(vec, vec_kurt, vec_skew)
 
 
   basic = list(mean = vec_mean, median = vec_med,
