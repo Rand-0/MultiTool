@@ -29,6 +29,32 @@ analyze_cor_basic <- function(var1, var2)
 
 analyze_cor_basic_num <- function(var1, var2)
 {
+  #To Do: Fast correlation calculations
+  #Parameters: p.val = 0.05
+  p.val = 0.05
   #Correlation between 2 numeric variables
+  #Firstly we need to check if they are normally distributed
+  norm1 = isNormalDist(var1)
+  norm2 = isNormalDist(var2)
+
+  #We check if there is a sufficient no of observations
+  if(any(is.character(c(norm1, norm2)))) {return(NA)}
+
+  #Then we check for outliers - we use list no 1. since it should be better than those later
+  #As default, it's modified Z-score
+  vec1_out = var1$outliers[1]
+  vec2_out = var2$outliers[1]
+
+  #We chose an appriopriate test
+  if(all(c(norm1$p.value, norm2$p.value) >= p.val))
+  {
+    if(any(length(c(vec1_out, vec2_out) == 0)))
+    {
+      #If variables are normally distributed and there are no outliers
+      #We use pearson coefficient
+
+    }
+  }
+
 
 }

@@ -11,15 +11,16 @@ vector_analysis <- function(vec)
 #' @export
 vector_analysis.numeric <- function(vec)
 {
+  #To do: improve factors detection
   #Dependants: moments
   #Parameters: Outlier_method = c("IQR", "Mod_Zscore")
   #For numeric variables
 
-  #First we check if it's not a factor variable with weird encoding
-  if(length(unique(vec)) <= 10) { return(vector_analysis.factor(as.factor(vec))) }
+  #First we check if it's not a factor variable with weird encoding, we consider max 5%
+  vec_n = length(vec)
+  if(length(unique(vec)) <= vec_n/20) { return(vector_analysis.factor(as.factor(vec))) }
 
   #Basic (mean, median, min, max, sd, var, quantiles, missings):
-  vec_n = length(vec)
   vec_miss = sum(is.na(vec))
   vec_miss_p = vec_miss/vec_n*100
   vec_nm = na.omit(vec)
@@ -67,7 +68,7 @@ vector_analysis.numeric <- function(vec)
 
   distributions = list(normal = vec_norm)
 
-  outliers = list(IQR = vec_out_iqr, Mod_Zscore = vec_out_z)
+  outliers = list(Mod_Zscore = vec_out_z, IQR = vec_out_iqr)
 
   result = list(type = "numeric", raw = vec, basic = basic, advanced = advanced,
                 distributions = distributions, quantiles = vec_quant, outliers = outliers)
@@ -83,7 +84,8 @@ vector_analysis.integer <- function(vec)
 {
   #We need to check if it's a numeric variable or with only natural numbers
   #or it's a factor variable
-  if(length(unique(vec)) <= 10)
+  vec_n = length(vec)
+  if(length(unique(vec)) <= vec_n/20)
     { vector_analysis.factor(as.factor(vec)) } else {vector_analysis.numeric(vec)}
 
 }
@@ -130,10 +132,10 @@ vector_analysis.character <- function(vec)
     if(length(na.omit(vec_dates))/(vec_n-vec_miss) > 0.5) {return(vector_analysis.dates(vec))}
   }
 
-  #It might be a factor then (since it's not numeric we can consider max 10% levels)
+  #It might be a factor then (since it's not numeric we can consider max 5% levels)
   vec_ulev = length(unique(vec_nm))
 
-  if(vec_ulev < vec_n/10) {return(vector_analysis.factor(as.factor(vec)))}
+  if(vec_ulev < vec_n/20) {return(vector_analysis.factor(as.factor(vec)))}
 
   #For now it's most likely just plain text
   vec_uni = length(unique(vec_nm))

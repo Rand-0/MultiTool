@@ -34,7 +34,7 @@ isRealType <- function(vec, type)
   if(get(check_type)(vec)) {TRUE} else {FALSE}
 }
 
-isNormalDist <- function(vec_raw, vec_kurt, vec_skew)
+isNormalDist <- function(vec_raw, vec_kurt = NULL, vec_skew = NULL)
 {
   #Test for normality of distrubtion
   #If provided variable with <10 obsevation, we return message
