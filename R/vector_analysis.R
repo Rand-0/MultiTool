@@ -84,6 +84,8 @@ vector_analysis.integer <- function(vec)
 {
   #We need to check if it's a numeric variable or with only natural numbers
   #or it's a factor variable
+  #it's tricky since there is no good way to distinguish
+  #Idea is to order unique values and check if differences between the are somehow stable
   vec_n = length(vec)
   if(length(unique(vec)) <= vec_n/20)
     { vector_analysis.factor(as.factor(vec)) } else {vector_analysis.numeric(vec)}
@@ -117,27 +119,7 @@ vector_analysis.factor <- function(vec)
 #' @export
 vector_analysis.character <- function(vec)
 {
-  #We need to check if it's a factor variable, a date or just plain text
-  #We check if >50% of non-missing data is formated as date
-  vec_n = length(vec)
-  vec_miss = sum(is.na(vec))
-  vec_miss_p = vec_miss/vec_n*100
-  vec_nm = na.omit(vec)
-
-  #To avoid long computational time (12 months * 3 types of sep)
-  if(length(unique(sapply(vec_nm, nchar))) < 36)
-  {
-    vec_dates = sapply(vec_nm, DateFormat)
-
-    if(length(na.omit(vec_dates))/(vec_n-vec_miss) > 0.5) {return(vector_analysis.dates(vec))}
-  }
-
-  #It might be a factor then (since it's not numeric we can consider max 5% levels)
-  vec_ulev = length(unique(vec_nm))
-
-  if(vec_ulev < vec_n/20) {return(vector_analysis.factor(as.factor(vec)))}
-
-  #For now it's most likely just plain text
+  #For only strings
   vec_uni = length(unique(vec_nm))
   vec_dup = unique(vec_nm[duplicated(vec_nm)])
 
