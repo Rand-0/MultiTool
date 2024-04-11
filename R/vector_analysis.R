@@ -82,13 +82,6 @@ vector_analysis.numeric <- function(vec)
 #' @export
 vector_analysis.integer <- function(vec)
 {
-  #We need to check if it's a numeric variable or with only natural numbers
-  #or it's a factor variable
-  #it's tricky since there is no good way to distinguish
-  #Idea is to order unique values and check if differences between the are somehow stable
-  vec_n = length(vec)
-  if(length(unique(vec)) <= vec_n/20)
-    { vector_analysis.factor(as.factor(vec)) } else {vector_analysis.numeric(vec)}
 
 }
 
