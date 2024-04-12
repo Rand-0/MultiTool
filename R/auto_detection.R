@@ -53,6 +53,11 @@ detect_type_internal_numeric <- function(vec_nm)
 {
   vec_n = length(vec_nm)
 
+  #We check if it's an integer type
+  #It's possible that it's still a factor with weird encoding (like 1.0, 2.0, 3.0)
+  #If it's the case, we try casting it as integers
+  if(all(as.integer(vec_nm) == vec_nm)) {vec_nm = as.integer(vec_nm)}
+
   #Firstly, we check if it's only integers
   if(is.integer(vec_nm))
   {
@@ -60,8 +65,15 @@ detect_type_internal_numeric <- function(vec_nm)
     #or it's a factor variable
     #it's tricky since there is no good way to distinguish
     #Idea is to order unique values and check if differences between the are somehow stable
-    if(length(unique(vec)) <= vec_n/20)
-    { vector_analysis.factor(as.factor(vec)) } else {vector_analysis.numeric(vec)}
+    if(areValuesInOrder(vec_nm)) {return(c("1", "factor"))}
+
+    if(length(unique(vec_nm)) / vec_n <= 0.2)
+      {return(c("2", "factor"))} else if(length(unique(vec_nm)) / vec_n <= 0.4)
+      {return(c("2", "numeric"))} else {return(c("1", "numeric"))}
+
+  } else
+  {
+    if(length(unique(vec_nm)) / vec_n <= 0.4) {return(c("2", "numeric"))} else {return(c("1", "numeric"))}
   }
 }
 

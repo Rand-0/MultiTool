@@ -61,3 +61,26 @@ isNormalDist <- function(vec_raw, vec_kurt = NULL, vec_skew = NULL)
   }
   list(method = method, statistic = statistic, p.value = p_val)
 }
+
+areValuesInOrder <- function(vec)
+{
+  #We check if differences between unique values in given vector are stable
+  #It indicates it's most likely a factor variable
+  vec_uni = unique(vec)
+
+  #Function is invalid for variables with less than 5 unique values!
+  if(length(unique(vec)) < 5) {return(TRUE)}
+  #Or when it exceeds 30% length
+  if(length(vec_uni) / length(vec) > 0.3) {return(FALSE)}
+
+  #We trim min and max value since it's common for factors to have weird number indicating missings etc
+  vec_uni_trim = vec_uni[-c(which.min(vec_uni), which.max(vec_uni))]
+
+  #Sorting vector to calculate differences
+  vec_sort = sort(vec_uni_trim)
+  vec_diff = diff(vec_sort)
+
+  #TODO: Is this really a valid way to do it?
+  if(length(unique(vec_diff)) / length(vec_diff) <= 0.05) {TRUE} else {FALSE}
+}
+
