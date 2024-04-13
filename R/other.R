@@ -81,6 +81,6 @@ areValuesInOrder <- function(vec)
   vec_diff = diff(vec_sort)
 
   #TODO: Is this really a valid way to do it?
-  if(length(unique(vec_diff)) / length(vec_diff) <= 0.05) {TRUE} else {FALSE}
+  if(length(unique(vec_diff)) <= 2) {TRUE} else {FALSE}
 }
 

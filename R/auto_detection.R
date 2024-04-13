@@ -1,22 +1,60 @@
-#The goal of autodetecion is try to distinguish variables accoridingly
+#The goal of auto-detection is try to distinguish variables accordingly
 #Since it might be impossible, we suggest types at first and ask user
 #' @export
+detect_type <- function(df)
+{
+  #Interface for variables type auto-detection
+  cols <- colnames(df)
+  detected = data.frame(variable=character(), type = character())
+  unsure = data.frame(variable=character(), type = character())
+  result = list()
+  for(i in cols)
+  {
+    res = detect_type_internal(df[,i])
+
+    if(res[1] == "1")
+    {
+      detected[nrow(detected)+1,] = c(i, res[2])
+    } else
+    {
+      unsure[nrow(unsure)+1,] = c(i, res[2])
+    }
+  }
+
+  col_types = c()
+
+  if(nrow(detected) != 0) {col_types = append(col_types, detected[,2])}
+  if(nrow(unsure) != 0) {col_types = append(col_types, unsure[,2])}
+
+  col_types_uni = unique(col_types)
+
+  for(i in col_types_uni)
+  {
+    if(nrow(detected) != 0) {detected_i = detected[detected[,2] == i, 1]} else {detected_i = c()}
+    if(nrow(unsure) != 0) {unsure_i = unsure[unsure[,2] == i, 1]} else {unsure_i = c()}
+
+    result[[i]] = list(detected = detected_i, candidates = unsure_i)
+  }
+  result
+}
+
+
 detect_type_internal <- function(vec)
 {
   #Internal function that analyze singular vector
   #As first, we can separate numeric, character and possibly other variables
   vec_nm = na.omit(vec)
 
-  if(is.character(vec))
+  if(is.character(vec_nm))
   {
     #Then we have 3 options (date, factor or string)
-    detect_type_internal_character(vec)
-  } else if(is.numeric(vec))
+    detect_type_internal_character(vec_nm)
+  } else if(is.numeric(vec_nm))
   {
-    detect_type_internal_numeric(vec)
+    detect_type_internal_numeric(vec_nm)
   } else
   {
-    detect_type_internal_other(vec)
+    detect_type_internal_other(vec_nm)
   }
 }
 
@@ -79,5 +117,6 @@ detect_type_internal_numeric <- function(vec_nm)
 
 detect_type_internal_other <- function(vec_nm)
 {
-
+  #TODO: what other types should we consider?
+  return(c("1", "other"))
 }
