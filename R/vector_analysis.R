@@ -9,16 +9,14 @@ vector_analysis <- function(vec)
 }
 
 #' @export
-vector_analysis.numeric <- function(vec)
+vector_analysis.mltnumeric <- function(vec)
 {
   #To do: improve factors detection
   #Dependants: moments
   #Parameters: Outlier_method = c("IQR", "Mod_Zscore")
   #For numeric variables
 
-  #First we check if it's not a factor variable with weird encoding, we consider max 5%
   vec_n = length(vec)
-  if(length(unique(vec)) <= vec_n/20) { return(vector_analysis.factor(as.factor(vec))) }
 
   #Basic (mean, median, min, max, sd, var, quantiles, missings):
   vec_miss = sum(is.na(vec))
@@ -75,20 +73,17 @@ vector_analysis.numeric <- function(vec)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
+  attr(result, "label") = attr(vec, "label")
 
   result
 }
 
 #' @export
-vector_analysis.integer <- function(vec)
-{
-
-}
-
-#' @export
-vector_analysis.factor <- function(vec)
+vector_analysis.mltfactor <- function(vec)
 {
   #For factor variables
+  vec_label = attr(vec, "label")
+  vec = as.factor(vec)
 
   #Basic (missings, levels)
   vec_n = length(vec)
@@ -105,28 +100,31 @@ vector_analysis.factor <- function(vec)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
+  attr(result, "label") = vec_label
 
   result
 }
 
 #' @export
-vector_analysis.character <- function(vec)
+vector_analysis.mltcharacter <- function(vec)
 {
   #For only strings
   vec_uni = length(unique(vec_nm))
   vec_dup = unique(vec_nm[duplicated(vec_nm)])
 
-  result = list(type = "character", raw = vec, missings = vec_miss, unique = vec_uni,
-                duplicates = vec_dup)
+  basic = list(missings = vec_miss, unique = vec_uni, duplicates = vec_dup)
+
+  result = list(type = "character", raw = vec, basic = basic)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
+  attr(result, "label") = attr(vec, "label")
 
   result
 }
 
 #' @export
-vector_analysis.dates <- function(vec)
+vector_analysis.mltdate <- function(vec)
 {
   vec_n = length(vec)
   vec_miss = sum(is.na(vec))
@@ -142,16 +140,16 @@ vector_analysis.dates <- function(vec)
   vec_max = max(vec_dates)
   vec_cor = length(vec_notdates)
 
-  basic = list(min = as.Date(vec_min), max = as.Date(vec_max))
+  basic = list(missings = vec_miss, min = as.Date(vec_min), max = as.Date(vec_max))
 
   trans = list(Date = as.Date(vec_dates), Other = vec_notdates)
 
-  result = list(type = "date", raw = vec, basic = basic,
-                missings = vec_miss, corrupted = vec_cor,
+  result = list(type = "date", raw = vec, basic = basic, corrupted = vec_cor,
                 transformed = trans)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
+  attr(result, "label") = attr(vec, "label")
 
   result
 }

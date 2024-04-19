@@ -84,3 +84,27 @@ areValuesInOrder <- function(vec)
   if(length(unique(vec_diff)) <= 2) {TRUE} else {FALSE}
 }
 
+correctMetaData <- function(meta_data, params)
+{
+  #we remove types with no variables to change
+  params = Filter(function(x) length(x) > 0, params)
+
+  remove_value_from_sublists <- function(main_list, value_to_remove)
+  {
+    lapply(main_list, function(sublist) {lapply(sublist, function(vec) {vec[vec != value_to_remove]})})
+  }
+
+  for(i in names(params))
+  {
+    for(j in params[[i]])
+    {
+      if(any(sapply(meta_data$column_types, function(slist) j %in% unlist(slist))))
+      {
+        meta_data$column_types = remove_value_from_sublists(meta_data$column_types, j)
+        meta_data$column_types[[i]][[1]] = append(meta_data$column_types[[i]][[1]], j)
+      }
+    }
+  }
+  meta_data
+}
+

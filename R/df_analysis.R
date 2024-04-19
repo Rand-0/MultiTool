@@ -1,12 +1,99 @@
 #' @export
-analyze_df_internal <- function(df)
+preanalyze_df <- function(df, index.limit = 3)
 {
-  #We call this function for id/time variables
+  #Dependants: tibble
+  #General interface for df preprocessing
+  #Should call all internal functions
+  #Typical process:
+  #index -> types
+  #it returns object
+  if(!is.data.frame(df)) { stop("Provided object is not a dataframe!") }
+  if(tibble::is_tibble(df)) { df = as.data.frame(df) }
+
+  index = analyze_df_index(df, index.limit)
+
+  types = detect_type(df)
+
+  result = list(index = index, column_types = types)
+
+  class(result) = "MltMetaData"
+
+  result
+}
+
+#' @export
+analyze_df <- function(df, type = "C-S", index = NULL, ...)
+{
+  #Dependants: dplyr
+  #Parameters: type = c("C-S", "TS", "Panel"), index = c(time_index, index1, index2,...)
+  #If object "MltMetaData" is supplied, we skip preanalysis
+  params = list(...)
+  if("meta.data" %in% names(params)) {meta_data = params[["meta.data"]]} else
+  { meta_data = preanalyze_df(df) }
+
+  #We give a benefit of the doubt to the user
+  if(any(names(params) %in% c("factor", "numeric", "date", "character", "other")))
+  { meta_data = correctMetaData(meta_data, params[c("factor", "numeric", "date", "character", "other")]) }
+
+  if(!is.null(index) & index != 0)
+  {
+    if(!(index %in% unlist(meta_data, recursive = FALSE)))
+    {stop("Provided index is not unique!")}
+  } else
+  {
+    #0 means auto index
+    if(index == 0)
+    {index = unlist(meta_data, recursive = FALSE)[1]}
+
+    #For non-panel data lack of index is fine
+    if(is.null(index))
+    {
+      if(type != "Panel")
+      {
+        index = "Not availabe for this df"
+      } else
+      {
+        stop("Panel data requires valid index!")
+      }
+    }
+  }
+
+  var_types = c()
+
+  for(i in names(meta_data$column_types))
+  {
+    var_types = append(var_types, rep(paste0("mlt", i),
+                                      length(unlist(meta_data$column_types[[i]], recursive = FALSE))))
+  }
+
+  names(var_types) = unlist(meta_data$column_types)
+
+  type = dplyr::case_when(type == "C-S" ~ "Cross-sectional data",
+                          type == "Panel" ~ "Panel data",
+                          type == "TS" ~ "Time series data")
+
+  if(index != "Not availabe for this df") {df_noindex = df[,-which(names(df) %in% index)]}
+
+  var_analysis = analyze_df_internal(df_noindex, var_types)
+
+  result = list(type = type, index = index, variables = var_analysis)
+
+  class(result) = "MltDataFrame"
+
+  result
+}
+
+analyze_df_internal <- function(df, types)
+{
+  #We call this function for each non-index variables
   results = list()
 
   for (i in colnames(df))
   {
-    results[[i]] = vector_analysis(df[,i])
+    vec = df[,i]
+    class(vec) = types[i]
+    attr(vec, "label") = i
+    results[[i]] = vector_analysis(vec)
   }
 
   results
