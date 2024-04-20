@@ -108,6 +108,8 @@ vector_analysis.mltfactor <- function(vec)
 #' @export
 vector_analysis.mltcharacter <- function(vec)
 {
+  vec_nm = na.omit(vec)
+
   #For only strings
   vec_uni = length(unique(vec_nm))
   vec_dup = unique(vec_nm[duplicated(vec_nm)])

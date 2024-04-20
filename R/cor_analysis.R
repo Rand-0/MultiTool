@@ -1,5 +1,5 @@
 #'@export
-analyze_cor_basic <- function(var1, var2)
+analyze_cor_basic <- function(var1, var2, p.val = 0.05)
 {
   #Most basic correlation between 2 variables
   #It's not intended for ts and panel variables
@@ -23,38 +23,57 @@ analyze_cor_basic <- function(var1, var2)
 
   if(all(c(tvar1, tvar2) == "numeric"))
   {
-    analyze_cor_basic_num(var1, var2)
+    result = analyze_cor_basic_num(var1, var2, p.val)
   }
+  result
 }
 
-analyze_cor_basic_num <- function(var1, var2)
+analyze_cor_basic_num <- function(var1, var2, p.val)
 {
-  #To Do: Fast correlation calculations
+  raw_var1 = var1$raw
+  raw_var2 = var2$raw
+  #Dependants: pcaPP
   #Parameters: p.val = 0.05
-  p.val = 0.05
   #Correlation between 2 numeric variables
   #Firstly we need to check if they are normally distributed
-  norm1 = isNormalDist(var1)
-  norm2 = isNormalDist(var2)
+  norm1 = isNormalDist(raw_var1, var1$advanced$kurtosis, var1$advanced$skewness)
+  norm2 = isNormalDist(raw_var2, var2$advanced$kurtosis, var2$advanced$skewness)
 
   #We check if there is a sufficient no of observations
   if(any(is.character(c(norm1, norm2)))) {return(NA)}
 
   #Then we check for outliers - we use list no 1. since it should be better than those later
   #As default, it's modified Z-score
-  vec1_out = var1$outliers[1]
-  vec2_out = var2$outliers[1]
+  vec1_out = var1$outliers[[1]]
+  vec2_out = var2$outliers[[1]]
 
   #We chose an appriopriate test
-  if(all(c(norm1$p.value, norm2$p.value) >= p.val))
+  if(all(c(norm1$p.value, norm2$p.value) >= p.val) & any(length(c(vec1_out, vec2_out) == 0)))
   {
-    if(any(length(c(vec1_out, vec2_out) == 0)))
-    {
-      #If variables are normally distributed and there are no outliers
-      #We use pearson coefficient
+    #If variables are normally distributed and there are no outliers
+    #We use pearson coefficient
+    #Pearson is very fast, no need for external library
+    pearson_test = cor.test(raw_var1, raw_var2, method = "pearson")
+    test_pval = pearson_test$p.value
+    test_method = pearson_test$method
+    test_cor = pearson_test$estimate
 
-    }
+  } else if(!any(is.na(c(raw_var1, raw_var2))))
+  {
+    #If there are no missing values, we can use fast kendall tau
+    test_pval = NA
+    test_method = "Kendall's rank correlation tau"
+    test_cor = pcaPP::cor.fk(raw_var1, raw_var2)
+  } else
+  {
+    #If there are missings we cannot use fast estimations of kendall tau
+    #We use basic one and just wait
+    kendall_test = cor.test(raw_var1, raw_var2, method = "kendall")
+    test_pval = kendall_test$p.value
+    test_method = kendall_test$method
+    test_cor = kendall_test$estimate
   }
 
+  return(list(method = test_method, p.value = test_pval, coefficient = test_cor))
 
 }

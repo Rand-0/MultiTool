@@ -27,6 +27,10 @@ analyze_df <- function(df, type = "C-S", index = NULL, ...)
   #Dependants: dplyr
   #Parameters: type = c("C-S", "TS", "Panel"), index = c(time_index, index1, index2,...)
   #If object "MltMetaData" is supplied, we skip preanalysis
+
+  #Message no 1 - start
+  cat("Gathering metadata... ")
+
   params = list(...)
   if("meta.data" %in% names(params)) {meta_data = params[["meta.data"]]} else
   { meta_data = preanalyze_df(df) }
@@ -35,16 +39,18 @@ analyze_df <- function(df, type = "C-S", index = NULL, ...)
   if(any(names(params) %in% c("factor", "numeric", "date", "character", "other")))
   { meta_data = correctMetaData(meta_data, params[c("factor", "numeric", "date", "character", "other")]) }
 
-  if(!is.null(index) & index != 0)
+  if(!is.null(index))
   {
     if(!(index %in% unlist(meta_data, recursive = FALSE)))
     {stop("Provided index is not unique!")}
-  } else
-  {
+
     #0 means auto index
     if(index == 0)
-    {index = unlist(meta_data, recursive = FALSE)[1]}
+    {index = unlist(meta_data, recursive = FALSE)[[1]]}
+  }
 
+  if(is.null(index))
+  {
     #For non-panel data lack of index is fine
     if(is.null(index))
     {
@@ -58,7 +64,13 @@ analyze_df <- function(df, type = "C-S", index = NULL, ...)
     }
   }
 
+  #Message no 1 - end
+  cat("Done\n")
+
   var_types = c()
+
+  #Message no 2 - start
+  cat("Analyzing variables... ")
 
   for(i in names(meta_data$column_types))
   {
@@ -72,13 +84,19 @@ analyze_df <- function(df, type = "C-S", index = NULL, ...)
                           type == "Panel" ~ "Panel data",
                           type == "TS" ~ "Time series data")
 
-  if(index != "Not availabe for this df") {df_noindex = df[,-which(names(df) %in% index)]}
+  if(index != "Not availabe for this df")
+    {df_noindex = df[,-which(names(df) %in% index)]} else {df_noindex = df}
 
   var_analysis = analyze_df_internal(df_noindex, var_types)
+
+  #Message no 2 - end
+  cat("Done\n")
 
   result = list(type = type, index = index, variables = var_analysis)
 
   class(result) = "MltDataFrame"
+
+  cat("Analysis completed.\n")
 
   result
 }

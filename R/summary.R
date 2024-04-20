@@ -19,5 +19,8 @@ summary.Mltvector <- function(object, ...)
     cat("Var.   :", round(vec_basic$var, 3), "\n")
     cat("NA's   :", vec_basic$missings, "\n")
     cat("Out.   :", length(vec_out[[1]]), "\n")
+  } else if(vec_type == "factor")
+  {
+    summary(as.factor(object$raw))
   }
 }
