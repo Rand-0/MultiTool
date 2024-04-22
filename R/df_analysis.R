@@ -22,7 +22,8 @@ preanalyze_df <- function(df, index.limit = 3)
 }
 
 #' @export
-analyze_df <- function(df, type = "C-S", index = NULL, ...)
+analyze_df <- function(df, type = "C-S", index = NULL, calc.cor = FALSE,
+                       p.value = 0.05, ...)
 {
   #Dependants: dplyr
   #Parameters: type = c("C-S", "TS", "Panel"), index = c(time_index, index1, index2,...)
@@ -56,7 +57,7 @@ analyze_df <- function(df, type = "C-S", index = NULL, ...)
     {
       if(type != "Panel")
       {
-        index = "Not availabe for this df"
+        index = NA
       } else
       {
         stop("Panel data requires valid index!")
@@ -75,16 +76,13 @@ analyze_df <- function(df, type = "C-S", index = NULL, ...)
   for(i in names(meta_data$column_types))
   {
     var_types = append(var_types, rep(paste0("mlt", i),
-                                      length(unlist(meta_data$column_types[[i]], recursive = FALSE))))
+                                      length(unlist(meta_data$column_types[[i]],
+                                                    recursive = FALSE))))
   }
 
   names(var_types) = unlist(meta_data$column_types)
 
-  type = dplyr::case_when(type == "C-S" ~ "Cross-sectional data",
-                          type == "Panel" ~ "Panel data",
-                          type == "TS" ~ "Time series data")
-
-  if(index != "Not availabe for this df")
+  if(!is.na(index))
     {df_noindex = df[,-which(names(df) %in% index)]} else {df_noindex = df}
 
   var_analysis = analyze_df_internal(df_noindex, var_types)
@@ -92,7 +90,24 @@ analyze_df <- function(df, type = "C-S", index = NULL, ...)
   #Message no 2 - end
   cat("Done\n")
 
-  result = list(type = type, index = index, variables = var_analysis)
+  if(calc.cor)
+  {
+    #Message no 3 - start
+    cat("Calculating correlations... ")
+
+    cor_analysis = analyze_df_cor(var_analysis, type, p.value)
+
+    #Message no 3 - end
+    cat("Done\n")
+
+  } else {cor_analysis = NA}
+
+  type = dplyr::case_when(type == "C-S" ~ "Cross-sectional data",
+                          type == "Panel" ~ "Panel data",
+                          type == "TS" ~ "Time series data")
+
+  result = list(type = type, index = index, variables = var_analysis,
+                correlation = cor_analysis)
 
   class(result) = "MltDataFrame"
 
@@ -185,8 +200,13 @@ analyze_df_index <- function(df, index.limit = 3)
   if(all(lengths(indexes) == 0)) {NA} else {indexes}
 }
 
-analyze_df_cor <- function(df)
+analyze_df_cor <- function(df, method, p.value)
 {
   #We analyze correlation between variables
   #It should call different methods based on type (ts, panel, c-s)
+
+  if(method %in% c("C-S", "Panel"))
+  {
+    return(analyze_cor_nts_internal(df, p.value))
+  }
 }

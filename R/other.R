@@ -108,3 +108,20 @@ correctMetaData <- function(meta_data, params)
   meta_data
 }
 
+createDummies <- function(vec)
+{
+  if(vec$type != "factor") {stop("Dummies cannot be created for non-factor variables!")}
+
+  vec_factor = as.factor(vec$raw)
+
+  vec_cols = vec$basic$levels
+  vec_name = attr(vec, "label")
+
+  vec_new = sapply(vec_cols, function(x) {ifelse(vec_factor == x, 1, 0)})
+
+  result = data.frame(vec_new)
+  colnames(result) = sapply(vec_cols, function(x) {paste0(vec_name, "_", x)})
+
+  result
+}
+

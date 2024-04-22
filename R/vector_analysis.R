@@ -109,6 +109,7 @@ vector_analysis.mltfactor <- function(vec)
 vector_analysis.mltcharacter <- function(vec)
 {
   vec_nm = na.omit(vec)
+  vec_miss = sum(is.na(vec))
 
   #For only strings
   vec_uni = length(unique(vec_nm))

@@ -14,4 +14,5 @@ Imports:
     moments (>= 0.14.1),
     dplyr (>= 0.7.4),
     tibble (>= 3.2.1),
-    pcaPP (>= 2.0)
+    pcaPP (>= 2.0),
+    rcompanion (>= 2.4.35)
