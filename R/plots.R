@@ -7,7 +7,7 @@ plot.Mltvector <- function(object, ...)
   #For dates and characters we plot some how many missings, corrupted, etc
   params = list(...)
   vec_type = object$type
-  vec_name = deparse1(substitute(object))
+  vec_name = attr(object, "label")
   if(vec_type == "numeric")
   {
     #we check wich missings to exclude in histogram
