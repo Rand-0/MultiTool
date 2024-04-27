@@ -1,6 +1,6 @@
 analyze_cor_nts_internal <- function(mlt_df, p.value)
 {
-  #TODO: use mapply()
+  #Dependants: purrr
   #Interface for analyzing correlation in given MltDataFrame
   #We calculate correlation for only numeric and factor variables (with more than 2 levels)
   #All checks are in internal functions (we just na.omit at the end)
@@ -12,49 +12,61 @@ analyze_cor_nts_internal <- function(mlt_df, p.value)
                                       function(var) if(var$type == "numeric")
                                        {attr(var, "label")} else {NA})))
 
-  cor_factors = list()
-  cor_numeric = list()
+  var_factors_comb = t(combn(var_factors, 2))
+  var_numeric_comb = t(combn(var_numeric, 2))
+
+  interfaceCor <- function(nvar1, nvar2, df, p.value)
+  {
+    analyze_cor_basic(df[[nvar1]], df[[nvar2]], p.value)
+  }
+
+  cor_factors = purrr::map2(var_factors_comb[,1],
+                            var_factors_comb[,2],
+                            interfaceCor,
+                            mlt_df,
+                            p.value)
+
+  cor_numeric = purrr::map2(var_numeric_comb[,1],
+                            var_numeric_comb[,2],
+                            interfaceCor,
+                            mlt_df,
+                            p.value)
+
+
+  res_factors = list()
+  res_numeric = list()
 
   for(i in var_factors)
   {
-    cor_i = list()
-    for(j in var_factors[-which(var_factors == i)])
+    for(j in 1:length(cor_factors))
     {
-      res = analyze_cor_basic(mlt_df[[i]],
-                              mlt_df[[j]],
-                              p.value)
-
-      if(length(res) == 1) {next}
-
-      cor_i = c(cor_i, setNames(list(res), j))
+      res = cor_factors[[j]][[i]]
+      if(!is.null(res))
+      {
+        if((!is.na(res)))
+        {
+          res_factors[[i]] = append(res_factors[[i]], res)
+        }
+      }
     }
-
-    if(length(cor_i) == 0) {next}
-
-    cor_factors[[i]] = cor_i
-
   }
 
   for(i in var_numeric)
   {
-    cor_i = list()
-    for(j in var_numeric[-which(var_numeric == i)])
+    for(j in 1:length(cor_numeric))
     {
-      res = analyze_cor_basic(mlt_df[[i]],
-                              mlt_df[[j]],
-                              p.value)
-
-      if(length(res) == 1) {next}
-
-      cor_i = c(cor_i, setNames(list(res), j))
+      res = cor_numeric[[j]][[i]]
+      if(!is.null(res))
+      {
+        if(!is.na(res))
+        {
+          res_numeric[[i]] = append(res_numeric[[i]], res)
+        }
+      }
     }
-
-    if(length(cor_i) == 0) {next}
-
-    cor_numeric[[i]] = cor_i
-
   }
-  result = list(numeric = cor_numeric, factor = cor_factors)
+
+  result = list(numeric = res_numeric, factor = res_factors)
 
   result
 }
@@ -91,15 +103,26 @@ analyze_cor_basic <- function(var1, var2, p.value)
 
   if(all(c(tvar1, tvar2) == "numeric"))
   {
-    result = analyze_cor_basic_num(var1, var2, p.value)
+    res = analyze_cor_basic_num(var1, var2, p.value)
 
   } else if(all(c(tvar1, tvar2) == "factor"))
   {
-    result = analyze_cor_basic_factor(var1, var2)
+    res = analyze_cor_basic_factor(var1, var2)
   } else
   {
     stop("Correlation cannot be calculated for different types of variables!")
   }
+
+  var1_name = attr(var1, "label")
+  var2_name = attr(var2, "label")
+
+  result = list()
+
+  result[[var1_name]] = list()
+  result[[var1_name]][[var2_name]] = res
+
+  result[[var2_name]] = list()
+  result[[var2_name]][[var1_name]] = res
 
   result
 }
@@ -172,3 +195,31 @@ analyze_cor_basic_factor <- function(var1, var2)
 
   return(list(method = test_method, p.value = test_pval, coefficient = test_cor))
 }
+
+generate_cor_matrix <- function(cor_list, var_names, precision)
+{
+  #Returns correlation matrix
+  #Internal function of getMlt.corMatrix
+  #If var_names = NULL, all variables are being used
+
+  if(is.null(var_names))
+  {
+    var_names = names(cor_list)
+  }
+
+  generateRow <- function(var, cors, var_names)
+  {
+    res = unlist(sapply(cors, function(x) {x[[var]][['coefficient']]}))
+    res = round(res[names(res) %in% var_names], precision)
+    base = NA
+    names(base) = var
+    base_index = which(names(cors) == var) - 1
+    return(append(res, base, after = base_index))
+  }
+
+  result = sapply(var_names, generateRow, cor_list, var_names)
+
+  result
+
+}
+

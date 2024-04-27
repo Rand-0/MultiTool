@@ -65,6 +65,9 @@ analyze_df <- function(df, type = "C-S", index = NULL, calc.cor = FALSE,
     }
   }
 
+  #Makes transformations easier
+  df_n = nrow(df)
+
   #Message no 1 - end
   cat("Done\n")
 
@@ -106,7 +109,7 @@ analyze_df <- function(df, type = "C-S", index = NULL, calc.cor = FALSE,
                           type == "Panel" ~ "Panel data",
                           type == "TS" ~ "Time series data")
 
-  result = list(type = type, index = index, variables = var_analysis,
+  result = list(type = type, observations = df_n, index = index, variables = var_analysis,
                 correlation = cor_analysis)
 
   class(result) = "MltDataFrame"
