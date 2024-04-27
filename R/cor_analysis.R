@@ -129,12 +129,13 @@ analyze_cor_basic <- function(var1, var2, p.value)
 
 analyze_cor_basic_num <- function(var1, var2, p.val)
 {
-  raw_var1 = var1$raw
-  raw_var2 = var2$raw
   #Dependants: pcaPP
   #Parameters: p.val = 0.05
   #Correlation between 2 numeric variables
   #Firstly we need to check if they are normally distributed
+  raw_var1 = var1$raw
+  raw_var2 = var2$raw
+
   norm1 = isNormalDist(raw_var1, var1$advanced$kurtosis, var1$advanced$skewness)
   norm2 = isNormalDist(raw_var2, var2$advanced$kurtosis, var2$advanced$skewness)
 

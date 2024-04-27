@@ -138,8 +138,8 @@ analyze_df_internal <- function(df, types)
 #' @export
 analyze_df_index <- function(df, index.limit = 3)
 {
+  #TODO: ADD DATES
   #Dependants: dplyr
-  #TO DO: ADD DATES
   #First function to call in analyze_df if indexes are not specified
   #We consider only integer/character/factor variables w/e missings and negative values
   #It returns potential variables to use as index (non-limited amount)
