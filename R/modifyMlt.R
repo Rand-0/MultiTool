@@ -2,7 +2,7 @@
 modifyMlt <- function(mltDF, variables, actions, ...)
 {
   #Interface function for mltdf modifications
-  #type of actions - normalize, standarize, winsorize, na.replace
+  #type of actions - normalize, standarize, winsorize, na.replace, type.change
   #Actions are done in given order
 
   if(class(mltDF) != "MltDataFrame")
@@ -46,4 +46,20 @@ modifyMlt_normalize <- function(vars, params)
   }
 
   result
+}
+
+modifyMlt_type.change <- function(vars, params)
+{
+  #TODO: Finish this
+  new_types = params[c("factor", "numeric", "date", "character", "other")]
+
+  new_types = Filter(function(x) length(x) > 0, new_types)
+
+  for(i in names(vars))
+  {
+    for(j in names(new_types))
+    {
+
+    }
+  }
 }

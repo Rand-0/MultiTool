@@ -1,3 +1,13 @@
+#' @title Preanalysis of Data Frame
+#'
+#' @description
+#' Returns a MltDataFrame object obtained from given Data Frame, containing possible indexes as variable combinations and variables types predictions.
+#'
+#' @param df A Data Frame.
+#' @param index.limit How big combinations of variables to consider as index.
+#'
+#' @return An object of class "MltDataFrame".
+#'
 #' @export
 preanalyze_df <- function(df, index.limit = 3)
 {
@@ -6,7 +16,7 @@ preanalyze_df <- function(df, index.limit = 3)
   #Should call all internal functions
   #Typical process:
   #index -> types
-  #it returns object
+  #it returns MltMetaData object
   if(!is.data.frame(df)) { stop("Provided object is not a dataframe!") }
   if(tibble::is_tibble(df)) { df = as.data.frame(df) }
 
@@ -21,6 +31,14 @@ preanalyze_df <- function(df, index.limit = 3)
   result
 }
 
+#' @param df
+#'
+#' @param type
+#' @param index
+#' @param calc.cor
+#' @param p.value
+#' @param ...
+#'
 #' @export
 analyze_df <- function(df, type = "C-S", index = NULL, calc.cor = FALSE,
                        p.value = 0.05, ...)
