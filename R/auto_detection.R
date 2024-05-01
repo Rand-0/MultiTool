@@ -8,6 +8,10 @@ detect_type <- function(df)
   detected = data.frame(variable=character(), type = character())
   unsure = data.frame(variable=character(), type = character())
   result = list()
+
+  if(nrow(df) < 100)
+    {warning("Auto-detection might not work correctly for a few observations!")}
+
   for(i in cols)
   {
     res = detect_type_internal(df[,i])
@@ -42,6 +46,11 @@ detect_type <- function(df)
 detect_type_internal <- function(vec)
 {
   #Internal function that analyze singular vector
+
+  #Before any detection we should just check for predefined type
+  if(is.factor(vec))
+  {return(c("1", "factor"))}
+
   #As first, we can separate numeric, character and possibly other variables
   vec_nm = na.omit(vec)
 

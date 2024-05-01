@@ -1,18 +1,16 @@
 #' @export
-vector_analysis <- function(vec)
+ts_analysis <- function(vec)
 {
   #We check if it's atomic
   if (!is.atomic(vec)) {stop("Provided object must be an atomic vector!")}
 
-  UseMethod("vector_analysis")
+  UseMethod("ts_analysis")
 }
 
 #' @export
-vector_analysis.mltnumeric <- function(vec)
+ts_analysis.mltnumeric <- function(vec)
 {
-  #To do: improve factors detection
   #Dependants: moments
-  #Parameters: Outlier_method = c("IQR", "Mod_Zscore")
   #For numeric variables
 
   vec_n = length(vec)
@@ -155,5 +153,3 @@ vector_analysis.mltdate <- function(vec)
 
   result
 }
-
-

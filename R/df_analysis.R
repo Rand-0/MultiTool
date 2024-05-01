@@ -137,7 +137,7 @@ analyze_df <- function(df, type = "C-S", index = NULL, calc.cor = FALSE,
   result
 }
 
-analyze_df_internal <- function(df, types)
+analyze_df_internal <- function(df, types, df_type)
 {
   #We call this function for each non-index variables
   results = list()
@@ -147,7 +147,8 @@ analyze_df_internal <- function(df, types)
     vec = df[,i]
     class(vec) = types[i]
     attr(vec, "label") = i
-    results[[i]] = vector_analysis(vec)
+    results[[i]] = dplyr::case_when(df_type == "C-S" ~ vector_analysis(vec),
+                                    df_type == "TS" ~ ts_analysis(vec))
   }
 
   results
