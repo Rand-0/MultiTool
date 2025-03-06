@@ -5,13 +5,19 @@ plot.Mltvector <- function(object, ...)
   #For numeric variables we do a box plot and histogram for non-outliers
   #For factors we call normal plot.factor except with level for NA
   #For dates and characters we plot some how many missings, corrupted, etc
+  params = list(...)
   vec_type = object$type
-  vec_name = deparse1(substitute(object))
+  vec_name = attr(object, "label")
   if(vec_type == "numeric")
   {
+    #we check wich missings to exclude in histogram
+    out_meth = "IQR"
+    if("outlier.method" %in% names(params)) {out_meth = params[["outlier.method"]]}
+
+    vec_out = unlist(object$outliers[out_meth])
 
     vec_box = na.omit(object$raw)
-    vec_hist = vec_box[!(vec_box %in% object$outliers)]
+    vec_hist = vec_box[!(vec_box %in% vec_out)]
 
     par(mfrow=c(2,1))
 
@@ -52,7 +58,7 @@ plot.Mltvector <- function(object, ...)
     par(mfrow=c(1,1))
 
     barplot(c(vec_val, vec_inv, vec_miss),
-            main = paste("Short statistics of", vec_name),
+            main = paste("Summary of", vec_name),
             col = "lightblue",
             ylab = "Frequency",
             names.arg = c("Valid", "Invalid", "NA"))
@@ -67,7 +73,7 @@ plot.Mltvector <- function(object, ...)
     par(mfrow=c(1,1))
 
     barplot(c(vec_uni, vec_dup, vec_miss),
-            main = paste("Short statistics of", vec_name),
+            main = paste("Summary of", vec_name),
             col = "lightblue",
             ylab = "Frequency",
             names.arg = c("Unique", "Duplicates", "NA"))

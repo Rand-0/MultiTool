@@ -9,17 +9,16 @@ vector_analysis <- function(vec)
 }
 
 #' @export
-vector_analysis.numeric <- function(vec)
+vector_analysis.mltnumeric <- function(vec)
 {
+  #To do: improve factors detection
   #Dependants: moments
-  #Parameters: Outlier_method = c("IRQ", "MZsc")
+  #Parameters: Outlier_method = c("IQR", "Mod_Zscore")
   #For numeric variables
 
-  #First we check if it's not a factor variable with weird encoding
-  if(length(unique(vec)) <= 10) { return(vector_analysis.factor(as.factor(vec))) }
+  vec_n = length(vec)
 
   #Basic (mean, median, min, max, sd, var, quantiles, missings):
-  vec_n = length(vec)
   vec_miss = sum(is.na(vec))
   vec_miss_p = vec_miss/vec_n*100
   vec_nm = na.omit(vec)
@@ -33,35 +32,30 @@ vector_analysis.numeric <- function(vec)
   vec_quant = quantile(vec_nm)
 
   #Outliers
-  vec_out = c()
+  vec_out_z = c()
+  vec_out_iqr = c()
 
-  if("MZsc" == "MZsc" & mad(vec_nm) != 0)
+  if(mad(vec_nm) != 0)
   {
     #Modified Z-score method
     vec_mad = mad(vec_nm)
-    for(i in vec_nm) {if((0.6745*(i - vec_med)/vec_mad) > 3.5) {vec_out = c(vec_out, i)}}
-  } else
-  {
-    #IQR method - if mad = 0
-    vec_iqr = IQR(vec_nm)
-    vec_bounds = c(vec_quant[2] - 1.5 * vec_iqr, vec_quant[4] + 1.5 * vec_iqr)
-    for(i in vec_nm) {if(i < vec_bounds[1] | i > vec_bounds[2]) {vec_out = c(vec_out, i)}}
+    for(i in vec_nm) {if((0.6745*(i - vec_med)/vec_mad) > 3.5) {vec_out_z = c(vec_out_z, i)}}
   }
 
+  #IQR method
+  vec_iqr = IQR(vec_nm)
+  vec_bounds = c(vec_quant[2] - 1.5 * vec_iqr, vec_quant[4] + 1.5 * vec_iqr)
+  for(i in vec_nm) {if(i < vec_bounds[1] | i > vec_bounds[2]) {vec_out_iqr = c(vec_out_iqr, i)}}
+
+
   #Advanced (kurtosis, skewness)
-  vec_kurt = kurtosis(vec_nm)
-  vec_skew = skewness(vec_nm)
+  vec_kurt = moments::kurtosis(vec_nm)
+  vec_skew = moments::skewness(vec_nm)
 
 
-  #Distributions (only for n>100)
+  #Distributions
   #Normal
-  if(vec_n >= 100)
-  {
-    vec_jb = (((vec_n-1)/6) * (vec_skew^2 + (0.25*(vec_kurt-3)^2)))
-    vec_jb_pval = 2 * dchisq(vec_jb, 2)
-
-    vec_norm = list(method = "Jarque-Bera Test", statistic = vec_jb, p_value = vec_jb_pval)
-  } else {vec_norm = "Not available for variables shorter than 100"}
+  vec_norm = isNormalDist(vec, vec_kurt, vec_skew)
 
 
   basic = list(mean = vec_mean, median = vec_med,
@@ -72,29 +66,24 @@ vector_analysis.numeric <- function(vec)
 
   distributions = list(normal = vec_norm)
 
+  outliers = list(Mod_Zscore = vec_out_z, IQR = vec_out_iqr)
+
   result = list(type = "numeric", raw = vec, basic = basic, advanced = advanced,
-                distributions = distributions, quantiles = vec_quant, outliers = vec_out)
+                distributions = distributions, quantiles = vec_quant, outliers = outliers)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
+  attr(result, "label") = attr(vec, "label")
 
   result
 }
 
 #' @export
-vector_analysis.integer <- function(vec)
-{
-  #We need to check if it's a numeric variable or with only natural numbers
-  #or it's a factor variable
-  if(length(unique(vec)) <= 10)
-    { vector_analysis.factor(as.factor(vec)) } else {vector_analysis.numeric(vec)}
-
-}
-
-#' @export
-vector_analysis.factor <- function(vec)
+vector_analysis.mltfactor <- function(vec)
 {
   #For factor variables
+  vec_label = attr(vec, "label")
+  vec = as.factor(vec)
 
   #Basic (missings, levels)
   vec_n = length(vec)
@@ -111,48 +100,34 @@ vector_analysis.factor <- function(vec)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
+  attr(result, "label") = vec_label
 
   result
 }
 
 #' @export
-vector_analysis.character <- function(vec)
+vector_analysis.mltcharacter <- function(vec)
 {
-  #We need to check if it's a factor variable, a date or just plain text
-  #We check if >80% of non-missing data is formated as date
-  vec_n = length(vec)
-  vec_miss = sum(is.na(vec))
-  vec_miss_p = vec_miss/vec_n*100
   vec_nm = na.omit(vec)
+  vec_miss = sum(is.na(vec))
 
-  #To avoid long computational time (12 months * 3 types of sep)
-  if(length(unique(sapply(vec_nm, nchar))) < 36)
-  {
-    vec_dates = sapply(vec_nm, DateFormat)
-
-    if(length(na.omit(vec_dates))/(vec_n-vec_miss) >= 0.8) {return(vector_analysis.dates(vec))}
-  }
-
-  #It might be a factor then (since it's not numeric we can consider max 10% levels)
-  vec_ulev = length(unique(vec_nm))
-
-  if(vec_ulev < vec_n/10) {return(vector_analysis.factor(as.factor(vec)))}
-
-  #For now it's most likely just plain text
+  #For only strings
   vec_uni = length(unique(vec_nm))
   vec_dup = unique(vec_nm[duplicated(vec_nm)])
 
-  result = list(type = "character", raw = vec, missings = vec_miss, unique = vec_uni,
-                duplicates = vec_dup)
+  basic = list(missings = vec_miss, unique = vec_uni, duplicates = vec_dup)
+
+  result = list(type = "character", raw = vec, basic = basic)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
+  attr(result, "label") = attr(vec, "label")
 
   result
 }
 
 #' @export
-vector_analysis.dates <- function(vec)
+vector_analysis.mltdate <- function(vec)
 {
   vec_n = length(vec)
   vec_miss = sum(is.na(vec))
@@ -168,16 +143,16 @@ vector_analysis.dates <- function(vec)
   vec_max = max(vec_dates)
   vec_cor = length(vec_notdates)
 
-  basic = list(min = as.Date(vec_min), max = as.Date(vec_max))
+  basic = list(missings = vec_miss, min = as.Date(vec_min), max = as.Date(vec_max))
 
   trans = list(Date = as.Date(vec_dates), Other = vec_notdates)
 
-  result = list(type = "date", raw = vec, basic = basic,
-                missings = vec_miss, corrupted = vec_cor,
+  result = list(type = "date", raw = vec, basic = basic, corrupted = vec_cor,
                 transformed = trans)
 
   #assigning class for methods for print, plot etc
   class(result) = "Mltvector"
+  attr(result, "label") = attr(vec, "label")
 
   result
 }
